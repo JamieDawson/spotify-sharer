@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Spotify } from "react-spotify-embed";
 import axios from "axios";
 import Header from "./components/Header";
-import useSpotifyAccessToken from "./hooks/useSpotifyAccessToken";
+import { parseSpotifyAlbumUrl } from "./lib/spotifyAlbumUrl";
 
 type Album = {
   one: string;
@@ -38,8 +38,6 @@ function App() {
     three: null,
     four: null,
   });
-
-  const accessToken = useSpotifyAccessToken();
 
   const inputByKey: Record<
     AlbumKey,
@@ -98,50 +96,28 @@ function App() {
   ) => {
     event.preventDefault();
 
-    typedAlbumFromInput = typedAlbumFromInput.split("?")[0];
+    const parsed = parseSpotifyAlbumUrl(typedAlbumFromInput);
 
-    if (accessToken) {
-      const isValid = await checkSpotifyUrl(typedAlbumFromInput);
-
-      if (isValid) {
-        const newObject = [...allAlbums];
-        newObject[index] = {
-          ...newObject[index],
-          [albumKey]: typedAlbumFromInput,
-        };
-        setAllAlbums(newObject);
-        setValidUrls((prev) => ({ ...prev, [albumKey]: true }));
-
-        const updates: Partial<Album> = { [albumKey]: typedAlbumFromInput };
-
-        try {
-          await updateAlbumOnBackend(updates);
-        } catch (error) {
-          console.error("Error updating album on backend:", error);
-        }
-      } else {
-        setValidUrls((prev) => ({ ...prev, [albumKey]: false }));
-      }
-    } else {
-      console.error("Access token is not available.");
+    if (!parsed.ok) {
+      setValidUrls((prev) => ({ ...prev, [albumKey]: false }));
+      return;
     }
-  };
 
-  const checkSpotifyUrl = async (url: string): Promise<boolean> => {
+    const urlToStore = parsed.canonicalUrl;
+    const newObject = [...allAlbums];
+    newObject[index] = {
+      ...newObject[index],
+      [albumKey]: urlToStore,
+    };
+    setAllAlbums(newObject);
+    setValidUrls((prev) => ({ ...prev, [albumKey]: true }));
+
+    const updates: Partial<Album> = { [albumKey]: urlToStore };
+
     try {
-      const albumId = url.split("/album/")[1].split("?")[0];
-
-      const response = await axios.get(
-        `https://api.spotify.com/v1/albums/${albumId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      );
-      return response.status === 200;
-    } catch {
-      return false;
+      await updateAlbumOnBackend(updates);
+    } catch (error) {
+      console.error("Error updating album on backend:", error);
     }
   };
 
