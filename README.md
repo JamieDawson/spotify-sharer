@@ -4,7 +4,7 @@ Spotify Sharer is a MERN stack app that displays 4 Spotify players that anyone c
 
 [You can interact with the website by clickin this link](https://spotify-app-frontend-code.vercel.app/)
 
-https://github.com/user-attachments/assets/0671c95b-62fe-4f34-aa17-316cf2984d7d
+https://github.com/user-attachments/assets/d611da09-fd91-4630-9945-4ac7d62e6ef4
 
 ## How to update albums in the video players:
 
